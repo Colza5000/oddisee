@@ -18,3 +18,26 @@ resource "aws_launch_configuration" "jenkins" {
     create_before_destroy = true
   }
 }
+
+resource "aws_autoscaling_group" "openvpn" {
+  name                      = "${var.service}-asg"
+  max_size                  = "${var.max_capacity}"
+  min_size                  = "${var.min_capacity}"
+  desired_capacity          = "${var.desired_capacity}"
+  health_check_grace_period = 300
+  health_check_type         = "ELB"
+  force_delete              = true
+  launch_configuration      = "${aws_launch_configuration.jenkins.name}"
+  vpc_zone_identifier       = ["${var.subnet_ids}"]
+  load_balancers            = ["${aws_elb.openvpn-elb.id}"]
+
+  timeouts {
+    delete = "15m"
+  }
+
+  tag {
+    key                 = "Name"
+    value               = "${var.service}"
+    propagate_at_launch = true
+  }
+}
